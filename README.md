@@ -1,40 +1,53 @@
 # Querying-with-Transact-SQL-
 
 5- Handle NULLs
+  A NULL value means no value or unknown. It does not mean zero or blank, or even an empty string. 
+  a) ISNULL: The ISNULL function takes two arguments. The first is an expression we are testing. If the value of that first argument is NULL, the function returns the second argument. If the first       
+  expression is not null, it is returned unchanged.
+  SELECT FirstName, ISNULL(MiddleName, 'None') AS MiddleIfAny, LastName FROM Sales.Customer;
+  
+  b) COALESCE: The COALESCE function is ANSI standard it can take a variable number of arguments, each of which is an expression. It will return the first expression in the list that is not NULL.
+   there are only two arguments, COALESCE behaves like ISNULL. However, with more than two arguments, COALESCE can be used as an alternative to a multipart CASE expression using ISNULL.
+   If all arguments are NULL, COALESCE returns NULL. All the expressions must return the same or compatible data types.
+   The syntax : SELECT COALESCE ( expression1, expression2, [ ,...n ] )
 
+  c) NULLIF: The NULLIF function allows to return NULL under certain conditions. NULLIF takes two arguments and returns NULL if they're equivalent. If they aren't equal, NULLIF returns the first argument.
+     SELECT SalesOrderID,  ProductID, UnitPrice, NULLIF(UnitPriceDiscount, 0) AS Discount FROM Sales.SalesOrderDetail;
 4- Work with data types
+  T-SQL include functions to help you explicitly convert between data types: 
+  a) CAST and TRY_CAST: The CAST function converts a value to a specified data type if the value is compatible with the target data type. An error will be returned if incompatible.
+
+  For example, the following query uses CAST to convert the integer values in the ProductID column to varchar values (with a maximum of 4 characters) in order to concatenate them with another 
+  character-  based value: SELECT CAST(ProductID AS varchar(4)) + ': ' + Name AS ProductName FROM Production.Product;  This transformation laslts only for the life of the query
+  
+  b) CONVERT and TRY_CONVERT: Transact-SQL, we can also use the CONVERT function
+  SELECT CONVERT(varchar(4), ProductID) + ': ' + Name AS ProductName FROM Production.Product;
+  Like CAST, CONVERT has a TRY_CONVERT variant that returns NULL for incompatible values.
+
+  Another benefit of using CONVERT over CAST is that CONVERT also includes a parameter that enables you specify a format style when converting numeric and date values to strings. For example, consider the   following query: SELECT SellStartDate,
+         CONVERT(varchar(20), SellStartDate) AS StartDate,
+         CONVERT(varchar(10), SellStartDate, 101) AS FormattedStartDate 
+         FROM SalesLT.Product;
+
+  c) PARSE and TRY_PARSE: The PARSE function is designed to convert formatted strings that represent numeric or date/time values
+   SELECT PARSE('01/01/2021' AS date) AS DateValue, PARSE('$199.99' AS money) AS MoneyValue;
+   
+  d) STR: The STR function converts a numeric value to a varchar.
+    SELECT ProductID,  '$' + STR(ListPrice) AS Price FROM Production.Product;
 
 3- Use the SELECT statement to query tables in a database
   
-  The query consists of a SELECT statement, which is composed of multiple clauses, each of which defines a specific operation that must be applied to the data being retrieved. Before we examine the run-     time order of operations, let's briefly take a look at what this query does, although the details of the various clauses will not be covered in this module.
-  
-  The SELECT clause returns the OrderDate column, and the count of OrderID values, to which is assigns the name (or alias) Orders:
-  
-  SELECT OrderDate, COUNT(OrderID) AS Orders
-  The FROM clause identifies which table is the source of the rows for the query; in this case it's the Sales.SalesOrder table:
-  
+  SELECT OrderDate
   FROM Sales.SalesOrder
-  The WHERE clause filters rows out of the results, keeping only those rows that satisfy the specified condition; in this case, orders that have a status of "shipped":
-  
-  
   WHERE Status = 'Shipped'
-  The GROUP BY clause takes the rows that met the filter condition and groups them by OrderDate, so that all the rows with the same OrderDate are considered as a single group and one row will be returned    for each group:
   
-  
-  GROUP BY OrderDate
-  After the groups are formed, the HAVING clause filters the groups based on its own predicate. Only dates with more than one order will be included in the results:
-  
-  
-  HAVING COUNT(OrderID) > 1
-  For the purposes of previewing this query, the final clause is the ORDER BY, which sorts the output into descending order of OrderDate:
-  
-    - Server actually evaluates them: The FROM clause is evaluated first, to provide the source rows for the rest of the statement. A virtual table is created and passed to the next step.
-    The WHERE clause is next to be evaluated, filtering those rows from the source table that match a predicate. The filtered virtual table is passed to the next step.
-    GROUP BY is next, organizing the rows in the virtual table according to unique values found in the GROUP BY list. A new virtual table is created, containing the list of groups, and is passed to the next   step. From this point in the flow of operations, only columns in the GROUP BY list or aggregate functions may be referenced by other elements.
-    The HAVING clause is evaluated next, filtering out entire groups based on its predicate. The virtual table created in step 3 is filtered and passed to the next step.
-    The SELECT clause finally executes, determining which columns will appear in the query results. Because the SELECT clause is evaluated after the other steps, any column aliases (in our example, Orders)    created there cannot be used in the GROUP BY or HAVING clause.
-    The ORDER BY clause is the last to execute, sorting the rows as determined by its column list
+The query consists of a SELECT statement, which is composed of multiple clauses, each of which defines a specific operation that must be applied to the data being retrieved.
+The SELECT clause returns the OrderDate column, the FROM clause identifies which table is the source of the rows for the query,he WHERE clause filters rows out of the results, keeping only those rows that satisfy the specified condition; in this case, orders that have a status of "shipped":
 
+Selecting all columns: SELECT * FROM Production.Product;
+Selecting specific columns: SELECT ProductID, Name, ListPrice, StandardCost ‎FROM Production.Product;
+Selecting expressions: SELECT ProductID, Name + '(' + ProductNumber + ')', ListPrice - StandardCost FROM Production.Product;
+Specifying column aliases: SELECT ProductID AS ID, Name + '(' + ProductNumber + ')' AS ProductName, ListPrice - StandardCost AS Markup FROM Production.Product;
 
 2- Identify SQL statement types
   In SQL, statements are categorized into several types:
